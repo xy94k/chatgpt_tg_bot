@@ -35,7 +35,11 @@ async def send_welcome(message: types.Message):
 # Обработка команды /context
 @dp.message_handler(commands=['context'])
 async def show_context(message: types.Message):
-    await message.answer(prompt)
+    if prompt:
+        await message.answer(prompt)
+    else:
+        await message.answer( "Контекст пуст.")
+
 
 # Обработка команды /clear
 @dp.message_handler(commands=['clear'])
