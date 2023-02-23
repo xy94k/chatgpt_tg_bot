@@ -8,9 +8,11 @@ load_dotenv()
 openai.api_key = os.getenv('OPENAI_API_KEY')
 
 # Объект бота
-
+"""
 proxy_url = 'http://proxy.server:3128'
 bot = Bot(token=str(os.getenv('TELEGRAM_TOKEN')), proxy=proxy_url)
+"""
+bot = Bot(token=str(os.getenv('TELEGRAM_TOKEN')))
 
 # Диспетчер для бота
 dp = Dispatcher(bot)
