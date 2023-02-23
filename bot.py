@@ -27,6 +27,7 @@ top_p = 0.2
 frequency_penalty = 0.2
 presence_penalty = 0.2
 """
+max_tokens = 900
 prompt = ""
 
 # Обработка команды /start
@@ -82,7 +83,7 @@ async def any_message(message: types.Message):
     total_tokens = len(input_tokens) + len(prompt_tokens)
 
     # вычислить количество лишних токенов
-    excess_tokens = max(0, total_tokens - 1024)
+    excess_tokens = max(0, total_tokens - max_tokens)
 
     # вычислить количество лишних символов
     excess_chars = 0
@@ -113,7 +114,7 @@ async def any_message(message: types.Message):
         total_tokens = len(response_tokens) + len(prompt_tokens)
 
         # вычислить количество лишних токенов
-        excess_tokens = max(0, total_tokens - 1024)
+        excess_tokens = max(0, total_tokens - max_tokens)
 
         # вычислить количество лишних символов
         excess_chars = 0
