@@ -87,7 +87,7 @@ async def any_message(message: types.Message):
 
     # Генерация ответа на основе текста сообщения
     try:
-        await response = openai.Completion.create(
+            response = openai.Completion.create(
             engine=conf.model_engine,
             prompt=prompt,
             max_tokens=conf.max_tokens
