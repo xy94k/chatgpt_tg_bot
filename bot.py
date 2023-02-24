@@ -94,7 +94,7 @@ async def any_message(message: types.Message):
             )
 
         # Получение ответа из сгенерированного текста
-        answer = response.choices[0].text.strip())
+        answer = response.choices[0].text.strip()
 
         # получить список токенов из ответа
         response_tokens = re.findall(r'\w+|[^\w\s]',answer)
