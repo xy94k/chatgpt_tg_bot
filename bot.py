@@ -115,9 +115,9 @@ async def any_message(message: types.Message):
         if excess_tokens > 0:
             prompt = prompt[excess_chars:] + answer
         else:
-            prompt += answer)
+            prompt += answer
         # Отправка ответа пользователю
-        await message.answer(answer))
+        await message.answer(answer)
     except openai.error.RateLimitError as e:
         await message.answer('Превышен лимит запросов:',e)
 
