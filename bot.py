@@ -1,11 +1,9 @@
 import openai, re, logging, conf, os
 from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, executor, types
-# from datetime import datetime
 
 load_dotenv()
 
-# Replace YOUR_API_KEY with your OpenAI API key
 openai.api_key = os.getenv('OPENAI_API_KEY')
 
 # Объект бота
@@ -20,15 +18,6 @@ dp = Dispatcher(bot)
 # Включаем логирование, чтобы не пропустить важные сообщения
 logging.basicConfig(level=logging.INFO)
 
-# Параметры для создания ответа
-"""model_engine = "text-davinci-003"
-temperature = 0.3
-max_tokens = 1024
-top_p = 0.2
-frequency_penalty = 0.2
-presence_penalty = 0.2
-"""
-max_tokens = 900
 prompt = ""
 
 # Обработка команды /start
@@ -84,7 +73,7 @@ async def any_message(message: types.Message):
     total_tokens = len(input_tokens) + len(prompt_tokens)
 
     # вычислить количество лишних токенов
-    excess_tokens = max(0, total_tokens - max_tokens)
+    excess_tokens = max(0, total_tokens - conf.max_prompt_tokens)
 
     # вычислить количество лишних символов
     excess_chars = 0
@@ -115,7 +104,7 @@ async def any_message(message: types.Message):
         total_tokens = len(response_tokens) + len(prompt_tokens)
 
         # вычислить количество лишних токенов
-        excess_tokens = max(0, total_tokens - max_tokens)
+        excess_tokens = max(0, total_tokens - conf.max_prompt_tokens)
 
         # вычислить количество лишних символов
         excess_chars = 0
