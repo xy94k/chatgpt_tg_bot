@@ -1,7 +1,7 @@
 import openai, re, logging, conf, os
 from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, executor, types
-from datetime import datetime
+# from datetime import datetime
 
 load_dotenv()
 
@@ -105,7 +105,7 @@ async def any_message(message: types.Message):
             )
 
         # Получение ответа из сгенерированного текста
-        answer = response.choices[0].text.strip() + str(datetime.now())
+        answer = response.choices[0].text.strip())
 
         # получить список токенов из ответа
         response_tokens = re.findall(r'\w+|[^\w\s]',answer)
@@ -126,9 +126,9 @@ async def any_message(message: types.Message):
         if excess_tokens > 0:
             prompt = prompt[excess_chars:] + answer
         else:
-            prompt += answer + str(datetime.now())
+            prompt += answer)
         # Отправка ответа пользователю
-        await message.answer(answer + str(datetime.now()))
+        await message.answer(answer))
     except openai.error.RateLimitError as e:
         await message.answer('Превышен лимит запросов:',e)
 
