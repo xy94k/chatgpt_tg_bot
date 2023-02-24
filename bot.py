@@ -87,11 +87,11 @@ async def any_message(message: types.Message):
 
     # Генерация ответа на основе текста сообщения
     try:
-            response = openai.Completion.create(
-            engine=conf.model_engine,
-            prompt=prompt,
-            max_tokens=conf.max_tokens
-            )
+        response = openai.Completion.create(
+        engine=conf.model_engine,
+        prompt=prompt,
+        max_tokens=conf.max_tokens
+        )
 
         # Получение ответа из сгенерированного текста
         answer = response.choices[0].text.strip()
