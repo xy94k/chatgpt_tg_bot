@@ -4,4 +4,4 @@ max_tokens = 1024
 top_p = 0.2
 frequency_penalty = 0.2
 presence_penalty = 0.2
-max_prompt_tokens = 900
+max_prompt_tokens = 700
