@@ -1,6 +1,7 @@
 import openai, re, logging, conf, os
 from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, executor, types
+from transformers import GPT2TokenizerFast
 
 load_dotenv()
 
@@ -15,6 +16,9 @@ bot = Bot(token=str(os.getenv('TELEGRAM_TOKEN')))
 
 # Диспетчер для бота
 dp = Dispatcher(bot)
+
+tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
+
 # Включаем логирование, чтобы не пропустить важные сообщения
 logging.basicConfig(level=logging.INFO)
 
@@ -67,21 +71,18 @@ async def any_message(message: types.Message):
     user_input = message.text
 
     # получить список токенов из ввода
-    input_tokens = re.findall(r'\w+|[^\w\s]',user_input)
-    prompt_tokens = re.findall(r'\w+|[^\w\s]',prompt)
+    input_tokens = tokenizer.tokenize(user_input)
+    prompt_tokens = tokenizer.tokenize(prompt)
     # вычислить общее количество токенов
     total_tokens = len(input_tokens) + len(prompt_tokens)
 
     # вычислить количество лишних токенов
     excess_tokens = max(0, total_tokens - conf.max_prompt_tokens)
 
-    # вычислить количество лишних символов
-    excess_chars = 0
-    for i in range(excess_tokens):
-        excess_chars += len(prompt_tokens[i])
-    # добавить ввод к истории, удаляя необходимое количество символов
+    # добавить ввод к истории, удаляя необходимое количество токенов
     if excess_tokens > 0:
-        prompt = prompt[excess_chars:] + user_input
+        prompt_tokens = prompt_tokens[excess_tokens:]
+        prompt = tokenizer.convert_tokens_to_string(prompt_tokens) + " " + user_input
     else:
         prompt += user_input
 
@@ -97,8 +98,8 @@ async def any_message(message: types.Message):
         answer = response.choices[0].text.strip()
 
         # получить список токенов из ответа
-        response_tokens = re.findall(r'\w+|[^\w\s]',answer)
-        prompt_tokens = re.findall(r'\w+|[^\w\s]',prompt)
+        response_tokens = tokenizer.tokenize(answer)
+        prompt_tokens = tokenizer.tokenize(prompt)
 
         # вычислить общее количество токенов
         total_tokens = len(response_tokens) + len(prompt_tokens)
@@ -106,14 +107,10 @@ async def any_message(message: types.Message):
         # вычислить количество лишних токенов
         excess_tokens = max(0, total_tokens - conf.max_prompt_tokens)
 
-        # вычислить количество лишних символов
-        excess_chars = 0
-        for i in range(excess_tokens):
-            excess_chars += len(prompt_tokens[i])
-
         # добавить ответ к истории, удаляя необходимое количество токенов
         if excess_tokens > 0:
-            prompt = prompt[excess_chars:] + answer
+            prompt_tokens = prompt_tokens[excess_chars:]
+            prompt = tokenizer.convert_tokens_to_string(prompt_tokens) + " " + answer
         else:
             prompt += answer
         # Отправка ответа пользователю
