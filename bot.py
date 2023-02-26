@@ -33,7 +33,7 @@ async def send_welcome(message: types.Message):
 @dp.message_handler(commands=['context'])
 async def show_context(message: types.Message):
     if prompt:
-        await message.answer(prompt + "\nprompt_tokens = "str(len(prompt_tokens)))
+        await message.answer(prompt + "\nprompt_tokens = " + str(len(prompt_tokens)))
     else:
         await message.answer( "Контекст пуст.")
 
