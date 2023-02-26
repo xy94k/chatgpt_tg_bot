@@ -23,6 +23,7 @@ tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
 logging.basicConfig(level=logging.INFO)
 
 prompt = ""
+prompt_tokens = []
 
 # Обработка команды /start
 @dp.message_handler(commands=['start'])
@@ -68,6 +69,7 @@ async def set_temperature(message: types.Message):
 async def any_message(message: types.Message):
     # Получение текста сообщения от пользователя
     global prompt
+    global prompt_tokens
     user_input = message.text
 
     # получить список токенов из ввода
