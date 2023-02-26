@@ -109,7 +109,7 @@ async def any_message(message: types.Message):
 
         # добавить ответ к истории, удаляя необходимое количество токенов
         if excess_tokens > 0:
-            prompt_tokens = prompt_tokens[excess_chars:]
+            prompt_tokens = prompt_tokens[excess_tokens:]
             prompt = tokenizer.convert_tokens_to_string(prompt_tokens) + " " + answer
         else:
             prompt += answer
