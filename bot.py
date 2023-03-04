@@ -114,7 +114,7 @@ async def any_message(message: types.Message):
     prompt_tokens = tokenizer.tokenize(user_data['prompt'])
     base_tokens = tokenizer.tokenize(base)
     # вычислить общее количество токенов
-    total_tokens = len(input_tokens) + len(prompt_tokens) = len(base_tokens)
+    total_tokens = len(input_tokens) + len(prompt_tokens) + len(base_tokens)
 
     # вычислить количество лишних токенов
     excess_tokens = max(0, total_tokens - (4097 - user_data['max_tokens']))
