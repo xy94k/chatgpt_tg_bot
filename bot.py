@@ -1,4 +1,4 @@
-import openai, re, logging, conf, os, json
+import openai, re, logging, os, json
 from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, executor, types
 from transformers import GPT2TokenizerFast
