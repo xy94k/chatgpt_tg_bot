@@ -95,7 +95,7 @@ async def codex(message: types.Message):
         answer = response.choices[0].text.strip()
         await message.answer(answer)
     except openai.error.RateLimitError as e:
-        await message.answer('Превышен лимит запросов:',e)
+        await message.answer('Превышен лимит запросов:')
 
 # Обработка команды /t
 @dp.message_handler(commands=['t'])
@@ -192,7 +192,7 @@ async def any_message(message: types.Message):
         
         await save_user_data(user_id,user_data)
     except openai.error.RateLimitError as e:
-        await message.answer('Превышен лимит запросов:',e)
+        await message.answer('Превышен лимит запросов:')
 
 
 
