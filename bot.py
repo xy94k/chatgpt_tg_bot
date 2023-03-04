@@ -163,9 +163,9 @@ async def any_message(message: types.Message):
         response = openai.Completion.create(
         engine=user_data['engine'],
         prompt=user_data['base'] + user_data['prompt'],
-        temperature = user_data['temperature']
-        #frequency_penalty = user_data['frequency_penalty']
-        #presence_penalty = user_data['presence_penalty']
+        temperature = user_data['temperature'],
+        #frequency_penalty = user_data['frequency_penalty'],
+        #presence_penalty = user_data['presence_penalty'],
         max_tokens=user_data['max_tokens']
         )
 
