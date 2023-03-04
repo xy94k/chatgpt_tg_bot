@@ -111,7 +111,7 @@ async def any_message(message: types.Message):
     # получить список токенов из ввода
     input_tokens = tokenizer.tokenize(user_input)
     prompt_tokens = tokenizer.tokenize(user_data['prompt'])
-    base_tokens = tokenizer.tokenize(base)
+    base_tokens = tokenizer.tokenize(user_data['base'])
     # вычислить общее количество токенов
     total_tokens = len(input_tokens) + len(prompt_tokens) + len(base_tokens)
 
