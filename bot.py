@@ -80,7 +80,6 @@ async def set_base(message: types.Message):
     user_id = message.from_user.id
     user_data = await get_user_data(user_id)
     user_data['base'] = message.get_args()
-    await message.answer("Контекст очищен.")
     await save_user_data(user_id, user_data)    
     
 """
