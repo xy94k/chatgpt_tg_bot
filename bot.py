@@ -40,7 +40,7 @@ async def save_user_data(user_id, user_data):
 # Обработка команды /start
 @dp.message_handler(commands=['start'])
 async def send_welcome(message: types.Message):
-    await message.answer("Привет! Я бот на основе ChatGPT.")
+    await message.answer("Привет! Я бот на основе ChatGPT. Вы можете изменить параметры генерации с помощью команд.")
     user_id = message.from_user.id
     user_data = await get_user_data(user_id)
     if user_data is None:
@@ -61,7 +61,7 @@ async def show_context(message: types.Message):
     user_id = message.from_user.id
     user_data = await get_user_data(user_id)
     if user_data['prompt']:
-        await message.answer(user_data['prompt'] + "\nprompt_tokens = " + str(len(prompt_tokens)))
+        await message.answer(user_data['prompt'])
     else:
         await message.answer( "Контекст пуст.")
 
@@ -80,7 +80,8 @@ async def set_base(message: types.Message):
     user_id = message.from_user.id
     user_data = await get_user_data(user_id)
     user_data['base'] = message.get_args()
-    await save_user_data(user_id, user_data)    
+    await save_user_data(user_id, user_data)
+    await message.answer(f"Базовый контекст изменен.")
 
 @dp.message_handler(commands=['codex'])
 async def codex(message: types.Message):
@@ -120,12 +121,12 @@ async def set_max_tokens(message: types.Message):
     user_id = message.from_user.id
     user_data = await get_user_data(user_id)
     try:
-        max_tokens = float(message.get_args())
+        max_tokens = int(message.get_args())
         # Проверяем, что значение находится в допустимых пределах
         if 0 <= max_tokens <= 4000:
             # Устанавливаем новое значение
             user_data['max_tokens'] = max_tokens
-            await message.answer(f"Temperature is set to {max_tokens}")
+            await message.answer(f"Установлено значение max_tokens = {max_tokens}")
             await save_user_data(user_id, user_data) 
         else:
             await message.answer("Неверное значение. Используйте значения до 4000.")
