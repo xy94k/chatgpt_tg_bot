@@ -84,7 +84,7 @@ async def set_base(message: types.Message):
 
 @dp.message_handler(commands=['codex'])
 async def codex(message: types.Message):
-    bot.set_parse_mode('Markdown']
+    bot.set_parse_mode('Markdown')
     user_id = message.from_user.id
     user_data = await get_user_data(user_id)
     try:
