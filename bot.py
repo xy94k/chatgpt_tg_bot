@@ -58,8 +58,10 @@ async def send_welcome(message: types.Message):
 # Обработка команды /context
 @dp.message_handler(commands=['context'])
 async def show_context(message: types.Message):
-    if prompt:
-        await message.answer(prompt + "\nprompt_tokens = " + str(len(prompt_tokens)))
+    user_id = message.from_user.id
+    user_data = await get_user_data(user_id)
+    if user_data['prompt']:
+        await message.answer(user_data['prompt'] + "\nprompt_tokens = " + str(len(prompt_tokens)))
     else:
         await message.answer( "Контекст пуст.")
 
@@ -67,10 +69,20 @@ async def show_context(message: types.Message):
 # Обработка команды /clear
 @dp.message_handler(commands=['clear'])
 async def clear_context(message: types.Message):
-    global prompt
-    prompt = ""
+    user_id = message.from_user.id
+    user_data = await get_user_data(user_id)
+    user_data['prompt'] = ""
     await message.answer("Контекст очищен.")
+    await save_user_data(user_id, user_data)
 
+@dp.message_handler(commands=['base'])
+async def set_base(message: types.Message):
+    user_id = message.from_user.id
+    user_data = await get_user_data(user_id)
+    user_data['base'] = message.get_args()
+    await message.answer("Контекст очищен.")
+    await save_user_data(user_id, user_data)    
+    
 """
 # Обработка команды /t
 @dp.message_handler(commands=['t'])
@@ -100,8 +112,9 @@ async def any_message(message: types.Message):
     # получить список токенов из ввода
     input_tokens = tokenizer.tokenize(user_input)
     prompt_tokens = tokenizer.tokenize(user_data['prompt'])
+    base_tokens = tokenizer.tokenize(base)
     # вычислить общее количество токенов
-    total_tokens = len(input_tokens) + len(prompt_tokens)
+    total_tokens = len(input_tokens) + len(prompt_tokens) = len(base_tokens)
 
     # вычислить количество лишних токенов
     excess_tokens = max(0, total_tokens - (4097 - user_data['max_tokens']))
@@ -117,19 +130,20 @@ async def any_message(message: types.Message):
     try:
         response = openai.Completion.create(
         engine=user_data['engine'],
-        prompt=user_data['prompt'],
+        prompt=user_data['base'] + user_data['prompt'],
         max_tokens=user_data['max_tokens']
         )
 
         # Получение ответа из сгенерированного текста
         answer = response.choices[0].text.strip()
-
+        await message.answer(answer)
+        
         # получить список токенов из ответа
         response_tokens = tokenizer.tokenize(answer)
         prompt_tokens = tokenizer.tokenize(user_data['prompt'])
 
         # вычислить общее количество токенов
-        total_tokens = len(response_tokens) + len(prompt_tokens)
+        total_tokens = len(response_tokens) + len(prompt_tokens) + len(base_tokens)
 
         # вычислить количество лишних токенов
         excess_tokens = max(0, total_tokens - user_data['max_tokens'])
@@ -140,8 +154,7 @@ async def any_message(message: types.Message):
             user_data['prompt'] = tokenizer.convert_tokens_to_string(prompt_tokens) + " " + answer
         else:
             user_data['prompt'] += answer
-        # Отправка ответа пользователю
-        await message.answer(answer)
+        
         await save_user_data(user_id,user_data)
     except openai.error.RateLimitError as e:
         await message.answer('Превышен лимит запросов:',e)
