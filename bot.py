@@ -81,23 +81,56 @@ async def set_base(message: types.Message):
     user_data = await get_user_data(user_id)
     user_data['base'] = message.get_args()
     await save_user_data(user_id, user_data)    
-    
-"""
+
+@dp.message_handler(commands=['codex'])
+async def set_base(message: types.Message):
+    user_id = message.from_user.id
+    user_data = await get_user_data(user_id)
+    try:
+        response = openai.Completion.create(
+        engine="code-davinci-002",
+        prompt=message.get_args(),
+        max_tokens=6000
+        )
+        answer = response.choices[0].text.strip()
+        await message.answer(answer)
+    except openai.error.RateLimitError as e:
+        await message.answer('Превышен лимит запросов:',e)
+
 # Обработка команды /t
 @dp.message_handler(commands=['t'])
 async def set_temperature(message: types.Message):
+    user_id = message.from_user.id
+    user_data = await get_user_data(user_id)
     try:
         temp = float(message.get_args())
         # Проверяем, что значение находится в допустимых пределах
         if 0.0 <= temp <= 2.0:
             # Устанавливаем новое значение
-            prompt["temperature"] = temp
-            await message.answer(f"Temperature is set to {temp}")
+            user_data['temperature'] = temp
+            await message.answer(f"Temperature установлена в {temp}")
+            await save_user_data(user_id, user_data) 
         else:
-            await message.answer("Invalid temperature value. Please use a value between 0.0 and 2.0")
+            await message.answer("Неверное значение. Используйте значения между 0.0 и 2.0. Большие значения делают ответы более случайными.")
     except IndexError:
-        await message.answer("Please provide a temperature value")
-"""
+        await message.answer("Введите значение между 0.0 и 2.0. Большие значения делают ответы более случайными.")
+    
+@dp.message_handler(commands=['max'])
+async def set_max_tokens(message: types.Message):
+    user_id = message.from_user.id
+    user_data = await get_user_data(user_id)
+    try:
+        max_tokens = float(message.get_args())
+        # Проверяем, что значение находится в допустимых пределах
+        if 0 <= max_tokens <= 4000:
+            # Устанавливаем новое значение
+            user_data['max_tokens'] = max_tokens
+            await message.answer(f"Temperature is set to {max_tokens}")
+            await save_user_data(user_id, user_data) 
+        else:
+            await message.answer("Неверное значение. Используйте значения до 4000.")
+    except IndexError:
+        await message.answer("Введите значение до 4000.")
 
 
 # Обработка всех остальных сообщений
@@ -130,6 +163,9 @@ async def any_message(message: types.Message):
         response = openai.Completion.create(
         engine=user_data['engine'],
         prompt=user_data['base'] + user_data['prompt'],
+        temperature = user_data['temperature']
+        #frequency_penalty = user_data['frequency_penalty']
+        #presence_penalty = user_data['presence_penalty']
         max_tokens=user_data['max_tokens']
         )
 
