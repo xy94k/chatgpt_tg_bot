@@ -45,7 +45,7 @@ async def send_welcome(message: types.Message):
     user_data = await get_user_data(user_id)
     if user_data is None:
         await save_user_data(user_id, {
-        'engine' : "gpt-3.5-turbo",
+        'engine' : "text-davinci-003",
         'temperature' : 0.3,
         'max_tokens' : 2047,
         'top_p' : 0.2,
