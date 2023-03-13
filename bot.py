@@ -1,7 +1,7 @@
-import openai, re, logging, os, json
+import openai, re, logging, os, json, tiktoken
 from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, executor, types
-from transformers import GPT2TokenizerFast
+# from transformers import GPT2TokenizerFast
 
 load_dotenv()
 
@@ -51,8 +51,7 @@ async def send_welcome(message: types.Message):
         'top_p' : 0.2,
         'frequency_penalty' : 0.2,
         'presence_penalty' : 0.2,
-        'prompt' : "",
-        'base' : ""
+        'messages' = []
     })
 
 # Обработка команды /context
@@ -134,6 +133,27 @@ async def set_max_tokens(message: types.Message):
         await message.answer("Введите значение до 4000.")
 
 
+def num_tokens(messages):
+  """Returns the number of tokens used by a list of messages."""
+  user_id = message.from_user.id
+  user_data = await get_user_data(user_id)
+  encoding = tiktoken.get_encoding("cl100k_base")
+  num_tokens = 0
+  for message in messages:
+    num_tokens += 4  # every message follows <im_start>{role/name}\n{content}<im_end>\n
+    for key, value in message.items():
+      num_tokens += len(encoding.encode(value))
+      if key == "name":  # if there's a name, the role is omitted
+        num_tokens += -1  # role is always required and always 1 token
+      num_tokens += 2  # every reply is primed with <im_start>assistant
+   return num_tokens
+
+# Добавить новое сообщение к списку, удаляя лишние при превышении длины.
+def update_messages(message):
+  pass
+  
+
+        
 # Обработка всех остальных сообщений
 @dp.message_handler()
 async def any_message(message: types.Message):
