@@ -40,6 +40,7 @@ async def send_welcome(message: types.Message):
     await message.answer("Привет! Я бот на основе ChatGPT. Вы можете изменить параметры генерации с помощью команд.")
     user_id = message.from_user.id
     user_data = await get_user_data(user_id)
+    print(user_data)
     if user_data is None:
         await save_user_data(user_id, {
         'engine' : "gpt-3.5-turbo",
