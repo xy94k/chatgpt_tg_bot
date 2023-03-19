@@ -23,6 +23,7 @@ async def save_user_data(user_id, user_data):
     with open(f"user_data/{user_id}.json", "w") as f:
         json.dump(user_data, f)
 
+
 DEFAULT_USER_DATA = {
         'engine' : "gpt-3.5-turbo",
         'temperature' : 0.6,
