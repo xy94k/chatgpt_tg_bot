@@ -125,11 +125,12 @@ def num_tokens(messages):
       num_tokens += 2  # every reply is primed with <im_start>assistant
    return num_tokens
 
-# Добавить новое сообщение к списку, удаляя лишние при превышении длины.
-def update_messages(messages, message):
-  pass
-  
-
+# Сократить messages
+def update_messages(user_data, message):
+  user_data['messages'].append(user_message)
+  while num_tokens(user_data['messages']) > 4090:
+    del user_data['messages'][1]
+  return user_data
         
 # Обработка всех остальных сообщений
 @dp.message_handler()
@@ -140,52 +141,28 @@ async def any_message(message: types.Message):
     
     user_message = {"role": "user", "content":message.text}
     
-    user_data['messages'] = update_messages(user_data['messages'], user_message)
+    user_data = update_messages(user_data, user_message)
     
-    # вычислить общее количество токенов
-    total_tokens = num_tokens(user_data['messages'])
-
-    # вычислить количество лишних токенов
-    excess_tokens = max(0, total_tokens - (4097 - user_data['max_tokens']))
-
-    # Удалить лишнее
-    if excess_tokens > 0:
-        prompt_tokens = prompt_tokens[excess_tokens:]
-        user_data['prompt'] = tokenizer.convert_tokens_to_string(prompt_tokens) + " " + user_input
-    else:
-        user_data['prompt'] += user_input
+    user_data['messages'] = update_messages(user_data['messages'], user_message)
 
     # Генерация ответа на основе текста сообщения
     try:
-        response = openai.Completion.create(
-        engine=user_data['engine'],
-        prompt=user_data['base'] + user_data['prompt'],
-        temperature = user_data['temperature'],
-        #frequency_penalty = user_data['frequency_penalty'],
-        #presence_penalty = user_data['presence_penalty'],
-        max_tokens=user_data['max_tokens']
-        )
+        response = openai.ChatCompletion.create(
+          model="gpt-3.5-turbo",
+          messages=user_data['messages'],
+          temperature = user_data['temperature'],
+          max_tokens = user_data['max_tokens']
+          )
 
         # Получение ответа из сгенерированного текста
-        answer = response.choices[0].text.strip()
+        answer = '{}. {}'.format(response['choices'][0]['message']['content'], response['choices'][0]['finish_reason'])
+        
         await message.answer(answer)
         
-        # получить список токенов из ответа
-        response_tokens = tokenizer.tokenize(answer)
-        prompt_tokens = tokenizer.tokenize(user_data['prompt'])
 
-        # вычислить общее количество токенов
-        total_tokens = len(response_tokens) + len(prompt_tokens) + len(base_tokens)
-
-        # вычислить количество лишних токенов
-        excess_tokens = max(0, total_tokens - user_data['max_tokens'])
-
-        # добавить ответ к истории, удаляя необходимое количество токенов
-        if excess_tokens > 0:
-            prompt_tokens = prompt_tokens[excess_tokens:]
-            user_data['prompt'] = tokenizer.convert_tokens_to_string(prompt_tokens) + " " + answer
-        else:
-            user_data['prompt'] += answer
+        # добавить ответ к истории
+        
+        user_data['messages'].append(response['choices'][0]['message'])
         
         await save_user_data(user_id,user_data)
     except openai.error.RateLimitError as e:
