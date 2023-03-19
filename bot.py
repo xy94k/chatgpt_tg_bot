@@ -112,9 +112,9 @@ async def set_max_tokens(message: types.Message):
 def num_tokens(messages):
     """Returns the number of tokens used by a list of messages."""
     num_tokens = 0
-    for message in messages:
+    for message_dict in messages:
         num_tokens += 4  # every message follows <im_start>{role/name}\n{content}<im_end>\n
-        for key, value in message.items():
+        for key, value in message_dict.items():
             num_tokens += len(encoding.encode(value))
             if key == "name":  # if there's a name, the role is omitted
                 num_tokens += -1  # role is always required and always 1 token
@@ -122,8 +122,8 @@ def num_tokens(messages):
     return num_tokens
 
 # Обновить messages
-def update_messages(user_data, message):
-    user_data['messages'] += message
+def update_messages(user_data, user_message_dict):
+    user_data['messages'] += user_message_dict
     while num_tokens(user_data['messages']) > 4090:
         del user_data['messages'][1]
     return user_data
@@ -135,11 +135,11 @@ async def any_message(message: types.Message):
     user_id = message.from_user.id
     user_data = await get_user_data(user_id)
     
-    user_message = {"role": "user", "content":message.text}
+    user_message_dict = {"role": "user", "content":message.text}
     
-    user_data = update_messages(user_data, user_message)
+    user_data = update_messages(user_data, user_message_dict)
     
-    user_data['messages'] = update_messages(user_data['messages'], user_message)
+    user_data['messages'] = update_messages(user_data['messages'], user_message_dict)
 
     # Генерация ответа на основе текста сообщения
     try:
