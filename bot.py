@@ -124,7 +124,7 @@ def num_tokens(messages):
 # Обновить messages
 def update_messages(user_data, user_message_dict):
     user_data['messages'].append(user_message_dict)
-    while num_tokens(user_data['messages']) > 4090:
+    while num_tokens(user_data['messages']) > (4090-user_data['max_tokens']):
         del user_data['messages'][1]
     return user_data
         
