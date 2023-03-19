@@ -112,9 +112,7 @@ async def set_max_tokens(message: types.Message):
 def num_tokens(messages):
     """Returns the number of tokens used by a list of messages."""
     num_tokens = 0
-    print(messages)
     for message_dict in messages:
-        print(message_dict)
         num_tokens += 4  # every message follows <im_start>{role/name}\n{content}<im_end>\n
         for key, value in message_dict.items():
             num_tokens += len(encoding.encode(value))
@@ -151,7 +149,11 @@ async def any_message(message: types.Message):
           )
 
         # Получение ответа из сгенерированного текста
-        answer = '{}. {}'.format(response['choices'][0]['message']['content'], response['choices'][0]['finish_reason'])
+        answer = '{content} \nFinish reason = {finish_reason};\nUsage = {usage};\nNum_tokens = {num_tokens}'.format(
+            content=response['choices'][0]['message']['content'], 
+            finish_reason=response['choices'][0]['finish_reason'], 
+            usage = response['usage'], 
+            num_tokens = num_tokens(user_data['messages']))
         
         await message.answer(answer)
         
