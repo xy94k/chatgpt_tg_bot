@@ -106,6 +106,24 @@ async def set_max_tokens(message: types.Message):
     user_data = await get_user_data(user_id)
     user_data['messages'][0] = {"role": "system", "content":message.get_args()}
     
+
+@dp.message_handler(commands=['answer'])
+async def answer_gpt3(message: types.Message):
+    user_id = message.from_user.id
+    user_data = await get_user_data(user_id)
+    try:
+        response = openai.Completion.create(
+        engine=user_data['text-davinci-003'],
+        prompt=message.text,
+        temperature = user_data['temperature'],
+        max_tokens=user_data['max_tokens']
+        )
+
+        answer = response.choices[0].text.strip()
+        await message.answer(answer)
+        
+    except Exception as e:
+        await message.answer(str(e))
     
 @dp.message_handler(commands=['help'])
 async def help(message: types.Message):
@@ -115,6 +133,7 @@ async def help(message: types.Message):
     /system текст - изменить системное сообщение;\n\
     /clear - очистить историю чата;\n\
     /context - показать историю чата;\n\
+    /answer текст - обратиться к модели gpt-3;\n\
     /start - установить значения параметров по-умолчанию."
     )
     
