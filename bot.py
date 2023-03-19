@@ -32,7 +32,7 @@ DEFAULT_USER_DATA = {
         'presence_penalty' : 0.2,
         'messages' : [{"role": "system", "content": "You are a helpful assistant."}]
     }
-system_message = {
+
 
 # Обработка команды /start
 @dp.message_handler(commands=['start'])
