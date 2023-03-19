@@ -1,23 +1,18 @@
 import openai, re, logging, os, json, tiktoken
 from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, executor, types
-# from transformers import GPT2TokenizerFast
+
 
 load_dotenv()
 
 openai.api_key = os.getenv('OPENAI_API_KEY')
 
 # Объект бота
-"""
-proxy_url = 'http://proxy.server:3128'
-bot = Bot(token=str(os.getenv('TELEGRAM_TOKEN')), proxy=proxy_url)
-"""
+
 bot = Bot(token=str(os.getenv('TELEGRAM_TOKEN')))
 
 # Диспетчер для бота
 dp = Dispatcher(bot)
-
-tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
 
 encoding = tiktoken.get_encoding("cl100k_base")
 
