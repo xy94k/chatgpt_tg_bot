@@ -120,9 +120,9 @@ def num_tokens(messages):
         num_tokens += 2  # every reply is primed with <im_start>assistant
     return num_tokens
 
-# Сократить messages
+# Обновить messages
 def update_messages(user_data, message):
-    user_data['messages'].append(user_message)
+    user_data['messages'].append(message)
     while num_tokens(user_data['messages']) > 4090:
         del user_data['messages'][1]
     return user_data
