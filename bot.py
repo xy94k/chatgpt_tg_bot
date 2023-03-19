@@ -49,7 +49,7 @@ async def show_context(message: types.Message):
     user_data = await get_user_data(user_id)
     try:
         await message.answer(user_data['messages'])
-    except Exception as e
+    except Exception as e:
         await message.answer(str(e))
     
 
