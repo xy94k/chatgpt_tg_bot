@@ -2,25 +2,15 @@ import openai, re, logging, os, json, tiktoken
 from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, executor, types
 
-
 load_dotenv()
 
 openai.api_key = os.getenv('OPENAI_API_KEY')
-
-# Объект бота
-
 bot = Bot(token=str(os.getenv('TELEGRAM_TOKEN')))
-
-# Диспетчер для бота
 dp = Dispatcher(bot)
-
 encoding = tiktoken.get_encoding("cl100k_base")
 
 # Включаем логирование, чтобы не пропустить важные сообщения
 logging.basicConfig(level=logging.INFO)
-
-prompt = ""
-prompt_tokens = []
 
 async def get_user_data(user_id):
     try:
@@ -32,43 +22,43 @@ async def get_user_data(user_id):
 async def save_user_data(user_id, user_data):
     with open(f"user_data/{user_id}.json", "w") as f:
         json.dump(user_data, f)
-        
+
+DEFAULT_USER_DATA = {
+        'engine' : "gpt-3.5-turbo",
+        'temperature' : 0.6,
+        'max_tokens' : 2047,
+        'top_p' : 0.2,
+        'frequency_penalty' : 0.2,
+        'presence_penalty' : 0.2,
+        'messages' : [{"role": "system", "content": "You are a helpful assistant."}]
+    }
+system_message = {
 
 # Обработка команды /start
 @dp.message_handler(commands=['start'])
 async def send_welcome(message: types.Message):
     await message.answer("Привет! Я бот на основе ChatGPT. Вы можете изменить параметры генерации с помощью команд.")
     user_id = message.from_user.id
-    user_data = await get_user_data(user_id)
-    print(user_data)
-    if user_data is None:
-        await save_user_data(user_id, {
-        'engine' : "gpt-3.5-turbo",
-        'temperature' : 0.3,
-        'max_tokens' : 2047,
-        'top_p' : 0.2,
-        'frequency_penalty' : 0.2,
-        'presence_penalty' : 0.2,
-        'messages' : [{"role": "system", "content": "You are a helpful assistant."}]
-    })
+    await save_user_data(user_id, DEFAULT_USER_DATA)
+    
 
 # Обработка команды /context
 @dp.message_handler(commands=['context'])
 async def show_context(message: types.Message):
     user_id = message.from_user.id
     user_data = await get_user_data(user_id)
-    if user_data['messages']:
+    try:
         await message.answer(user_data['messages'])
-    else:
-        await message.answer( "Контекст пуст.")
-
+    except Exception as e
+        await message.answer(str(e))
+    
 
 # Обработка команды /clear
 @dp.message_handler(commands=['clear'])
 async def clear_context(message: types.Message):
     user_id = message.from_user.id
     user_data = await get_user_data(user_id)
-    user_data['messages'] = []
+    user_data['messages'] = user_data['messages'][:0]
     await message.answer("Контекст очищен.")
     await save_user_data(user_id, user_data)
 
@@ -104,10 +94,30 @@ async def set_max_tokens(message: types.Message):
             await message.answer(f"Установлено значение max_tokens = {max_tokens}")
             await save_user_data(user_id, user_data) 
         else:
-            await message.answer("Неверное значение. Используйте значения до 4000.")
+            await message.answer("Неверное значение. Используйте значения до 4000. Обратите внимание, что суммарный размер запроса и ответа не должен превышать 4097 токенов.")
     except IndexError:
         await message.answer("Введите значение до 4000.")
 
+
+
+@dp.message_handler(commands=['system'])
+async def set_max_tokens(message: types.Message):
+    user_id = message.from_user.id
+    user_data = await get_user_data(user_id)
+    user_data['messages'][0] = {"role": "system", "content":message.get_args()}
+    
+    
+@dp.message_handler(commands=['help'])
+async def help(message: types.Message):
+    await message.answer('Доступны следующие команды:\n
+    /t 0-2.0 - изменить параметр temperature\n
+    /max 1-4097 - изменить параметр max_tokens\n
+    /system текст - изменить системное сообщение\n
+    /clear - очистить историю чата\n
+    /context - показать историю чата\n
+    /start - установить значения параметров по-умолчанию'
+    )
+    
 
 def num_tokens(messages):
     """Returns the number of tokens used by a list of messages."""
@@ -155,16 +165,18 @@ async def any_message(message: types.Message):
             usage = response['usage'], 
             num_tokens = num_tokens(user_data['messages']))
         
-        await message.answer(answer)
-        
-
-        # добавить ответ к истории
-        
+        try:
+            await message.answer(answer)
+        except Exception as e:
+            await message.answer(str(e))
+    
         user_data['messages'].append(response['choices'][0]['message'])
         
         await save_user_data(user_id,user_data)
     except openai.error.RateLimitError as e:
         await message.answer('Превышен лимит запросов:' + str(e))
+    except Exception as e:
+        await message.answer(str(e))
 
 
 
