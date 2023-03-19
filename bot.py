@@ -53,7 +53,7 @@ async def send_welcome(message: types.Message):
         'top_p' : 0.2,
         'frequency_penalty' : 0.2,
         'presence_penalty' : 0.2,
-        'messages' = [{"role": "system", "content": "You are a helpful assistant."}]
+        'messages' : [{"role": "system", "content": "You are a helpful assistant."}]
     })
 
 # Обработка команды /context
