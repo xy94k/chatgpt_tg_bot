@@ -140,8 +140,6 @@ async def any_message(message: types.Message):
     user_message_dict = {"role": "user", "content":message.text}
     
     user_data = update_messages(user_data, user_message_dict)
-    
-    user_data['messages'] = update_messages(user_data['messages'], user_message_dict)
 
     # Генерация ответа на основе текста сообщения
     try:
