@@ -1,29 +1,16 @@
-import openai, re, logging, os, json
+import openai, re, logging, os, json, tiktoken
 from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, executor, types
-from transformers import GPT2TokenizerFast
 
 load_dotenv()
 
 openai.api_key = os.getenv('OPENAI_API_KEY')
-
-# Объект бота
-"""
-proxy_url = 'http://proxy.server:3128'
-bot = Bot(token=str(os.getenv('TELEGRAM_TOKEN')), proxy=proxy_url)
-"""
 bot = Bot(token=str(os.getenv('TELEGRAM_TOKEN')))
-
-# Диспетчер для бота
 dp = Dispatcher(bot)
-
-tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
+encoding = tiktoken.get_encoding("cl100k_base")
 
 # Включаем логирование, чтобы не пропустить важные сообщения
 logging.basicConfig(level=logging.INFO)
-
-prompt = ""
-prompt_tokens = []
 
 async def get_user_data(user_id):
     try:
@@ -35,68 +22,47 @@ async def get_user_data(user_id):
 async def save_user_data(user_id, user_data):
     with open(f"user_data/{user_id}.json", "w") as f:
         json.dump(user_data, f)
-        
+
+
+DEFAULT_USER_DATA = {
+        'engine' : "gpt-3.5-turbo",
+        'temperature' : 0.6,
+        'max_tokens' : 2047,
+        'top_p' : 0.2,
+        'frequency_penalty' : 0.2,
+        'presence_penalty' : 0.2,
+        'messages' : [{"role": "system", "content": "You are a helpful assistant."}]
+    }
+
 
 # Обработка команды /start
 @dp.message_handler(commands=['start'])
 async def send_welcome(message: types.Message):
     await message.answer("Привет! Я бот на основе ChatGPT. Вы можете изменить параметры генерации с помощью команд.")
     user_id = message.from_user.id
-    user_data = await get_user_data(user_id)
-    if user_data is None:
-        await save_user_data(user_id, {
-        'engine' : "text-davinci-003",
-        'temperature' : 0.3,
-        'max_tokens' : 2047,
-        'top_p' : 0.2,
-        'frequency_penalty' : 0.2,
-        'presence_penalty' : 0.2,
-        'prompt' : "",
-        'base' : ""
-    })
+    await save_user_data(user_id, DEFAULT_USER_DATA)
+    
 
 # Обработка команды /context
 @dp.message_handler(commands=['context'])
 async def show_context(message: types.Message):
     user_id = message.from_user.id
     user_data = await get_user_data(user_id)
-    if user_data['prompt']:
-        await message.answer(user_data['prompt'])
-    else:
-        await message.answer( "Контекст пуст.")
-
+    try:
+        await message.answer(user_data['messages'])
+    except Exception as e:
+        await message.answer(str(e))
+    
 
 # Обработка команды /clear
 @dp.message_handler(commands=['clear'])
 async def clear_context(message: types.Message):
     user_id = message.from_user.id
     user_data = await get_user_data(user_id)
-    user_data['prompt'] = ""
+    user_data['messages'] = user_data['messages'][:0]
     await message.answer("Контекст очищен.")
     await save_user_data(user_id, user_data)
 
-@dp.message_handler(commands=['base'])
-async def set_base(message: types.Message):
-    user_id = message.from_user.id
-    user_data = await get_user_data(user_id)
-    user_data['base'] = message.get_args()
-    await save_user_data(user_id, user_data)
-    await message.answer(f"Базовый контекст изменен.")
-
-@dp.message_handler(commands=['codex'])
-async def codex(message: types.Message):
-    user_id = message.from_user.id
-    user_data = await get_user_data(user_id)
-    try:
-        response = openai.Completion.create(
-        engine="code-davinci-002",
-        prompt=message.get_args(),
-        max_tokens=6000
-        )
-        answer = response.choices[0].text.strip()
-        await message.answer(answer)
-    except openai.error.RateLimitError as e:
-        await message.answer('Превышен лимит запросов:' + str(e))
 
 # Обработка команды /t
 @dp.message_handler(commands=['t'])
@@ -129,71 +95,108 @@ async def set_max_tokens(message: types.Message):
             await message.answer(f"Установлено значение max_tokens = {max_tokens}")
             await save_user_data(user_id, user_data) 
         else:
-            await message.answer("Неверное значение. Используйте значения до 4000.")
+            await message.answer("Неверное значение. Используйте значения до 4000. Обратите внимание, что суммарный размер запроса и ответа не должен превышать 4097 токенов.")
     except IndexError:
         await message.answer("Введите значение до 4000.")
 
 
+
+@dp.message_handler(commands=['system'])
+async def set_max_tokens(message: types.Message):
+    user_id = message.from_user.id
+    user_data = await get_user_data(user_id)
+    user_data['messages'][0] = {"role": "system", "content":message.get_args()}
+    
+
+@dp.message_handler(commands=['answer'])
+async def answer_gpt3(message: types.Message):
+    user_id = message.from_user.id
+    user_data = await get_user_data(user_id)
+    try:
+        response = openai.Completion.create(
+        engine='text-davinci-003',
+        prompt=message.text,
+        temperature = user_data['temperature'],
+        max_tokens=user_data['max_tokens']
+        )
+
+        answer = response.choices[0].text.strip()
+        await message.answer(answer)
+        
+    except Exception as e:
+        await message.answer(str(e))
+    
+@dp.message_handler(commands=['help'])
+async def help(message: types.Message):
+    await message.answer("Доступны следующие команды:\n\
+    /t 0-2.0 - изменить параметр temperature;\n\
+    /max 1-4097 - изменить параметр max_tokens;\n\
+    /system текст - изменить системное сообщение;\n\
+    /clear - очистить историю чата;\n\
+    /context - показать историю чата;\n\
+    /answer текст - обратиться к модели gpt-3;\n\
+    /start - установить значения параметров по-умолчанию."
+    )
+    
+
+def num_tokens(messages):
+    """Returns the number of tokens used by a list of messages."""
+    num_tokens = 0
+    for message_dict in messages:
+        num_tokens += 4  # every message follows <im_start>{role/name}\n{content}<im_end>\n
+        for key, value in message_dict.items():
+            num_tokens += len(encoding.encode(value))
+            if key == "name":  # if there's a name, the role is omitted
+                num_tokens += -1  # role is always required and always 1 token
+    num_tokens += 2  # every reply is primed with <im_start>assistant   
+    return num_tokens
+
+# Обновить messages
+def update_messages(user_data, user_message_dict):
+    user_data['messages'].append(user_message_dict)
+    while num_tokens(user_data['messages']) > (4090-user_data['max_tokens']):
+        del user_data['messages'][1]
+    return user_data
+        
 # Обработка всех остальных сообщений
 @dp.message_handler()
 async def any_message(message: types.Message):
     # Получение текста сообщения от пользователя
     user_id = message.from_user.id
     user_data = await get_user_data(user_id)
-    user_input = message.text
-
-    # получить список токенов из ввода
-    input_tokens = tokenizer.tokenize(user_input)
-    prompt_tokens = tokenizer.tokenize(user_data['prompt'])
-    base_tokens = tokenizer.tokenize(user_data['base'])
-    # вычислить общее количество токенов
-    total_tokens = len(input_tokens) + len(prompt_tokens) + len(base_tokens)
-
-    # вычислить количество лишних токенов
-    excess_tokens = max(0, total_tokens - (4097 - user_data['max_tokens']))
-
-    # добавить ввод к истории, удаляя необходимое количество токенов
-    if excess_tokens > 0:
-        prompt_tokens = prompt_tokens[excess_tokens:]
-        user_data['prompt'] = tokenizer.convert_tokens_to_string(prompt_tokens) + " " + user_input
-    else:
-        user_data['prompt'] += user_input
+    
+    user_message_dict = {"role": "user", "content":message.text}
+    
+    user_data = update_messages(user_data, user_message_dict)
 
     # Генерация ответа на основе текста сообщения
     try:
-        response = openai.Completion.create(
-        engine=user_data['engine'],
-        prompt=user_data['base'] + user_data['prompt'],
-        temperature = user_data['temperature'],
-        #frequency_penalty = user_data['frequency_penalty'],
-        #presence_penalty = user_data['presence_penalty'],
-        max_tokens=user_data['max_tokens']
-        )
+        response = openai.ChatCompletion.create(
+          model="gpt-3.5-turbo",
+          messages=user_data['messages'],
+          temperature = user_data['temperature'],
+          max_tokens = user_data['max_tokens']
+          )
 
         # Получение ответа из сгенерированного текста
-        answer = response.choices[0].text.strip()
-        await message.answer(answer)
+        answer = '{content} \nFinish reason = {finish_reason};\nUsage = {usage};\nNum_tokens = {num_tokens}'.format(
+            content=response['choices'][0]['message']['content'], 
+            finish_reason=response['choices'][0]['finish_reason'], 
+            usage = response['usage'], 
+            num_tokens = num_tokens(user_data['messages']))
         
-        # получить список токенов из ответа
-        response_tokens = tokenizer.tokenize(answer)
-        prompt_tokens = tokenizer.tokenize(user_data['prompt'])
-
-        # вычислить общее количество токенов
-        total_tokens = len(response_tokens) + len(prompt_tokens) + len(base_tokens)
-
-        # вычислить количество лишних токенов
-        excess_tokens = max(0, total_tokens - user_data['max_tokens'])
-
-        # добавить ответ к истории, удаляя необходимое количество токенов
-        if excess_tokens > 0:
-            prompt_tokens = prompt_tokens[excess_tokens:]
-            user_data['prompt'] = tokenizer.convert_tokens_to_string(prompt_tokens) + " " + answer
-        else:
-            user_data['prompt'] += answer
+        try:
+            await message.answer(answer)
+        except Exception as e:
+            await message.answer(str(e))
+    
+        user_data['messages'].append(response['choices'][0]['message'])
         
         await save_user_data(user_id,user_data)
     except openai.error.RateLimitError as e:
         await message.answer('Превышен лимит запросов:' + str(e))
+    except Exception as e:
+        await message.answer(str(e))
 
 
 
