@@ -114,16 +114,16 @@ async def set_max_tokens(message: types.Message):
 
 
 def num_tokens(messages):
-  """Returns the number of tokens used by a list of messages."""
-  num_tokens = 0
-  for message in messages:
-    num_tokens += 4  # every message follows <im_start>{role/name}\n{content}<im_end>\n
+    """Returns the number of tokens used by a list of messages."""
+    num_tokens = 0
+    for message in messages:
+        num_tokens += 4  # every message follows <im_start>{role/name}\n{content}<im_end>\n
     for key, value in message.items():
-      num_tokens += len(encoding.encode(value))
-      if key == "name":  # if there's a name, the role is omitted
-        num_tokens += -1  # role is always required and always 1 token
-      num_tokens += 2  # every reply is primed with <im_start>assistant
-   return num_tokens
+        num_tokens += len(encoding.encode(value))
+        if key == "name":  # if there's a name, the role is omitted
+            num_tokens += -1  # role is always required and always 1 token
+        num_tokens += 2  # every reply is primed with <im_start>assistant
+    return num_tokens
 
 # Сократить messages
 def update_messages(user_data, message):
