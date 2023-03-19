@@ -123,7 +123,7 @@ def num_tokens(messages):
 
 # Обновить messages
 def update_messages(user_data, message):
-    user_data['messages'][].append(message)
+    user_data['messages'] += message
     while num_tokens(user_data['messages']) > 4090:
         del user_data['messages'][1]
     return user_data
