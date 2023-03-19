@@ -113,7 +113,7 @@ async def answer_gpt3(message: types.Message):
     user_data = await get_user_data(user_id)
     try:
         response = openai.Completion.create(
-        engine=user_data['text-davinci-003'],
+        engine='text-davinci-003',
         prompt=message.text,
         temperature = user_data['temperature'],
         max_tokens=user_data['max_tokens']
