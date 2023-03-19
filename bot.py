@@ -19,6 +19,8 @@ dp = Dispatcher(bot)
 
 tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
 
+encoding = tiktoken.get_encoding("cl100k_base")
+
 # Включаем логирование, чтобы не пропустить важные сообщения
 logging.basicConfig(level=logging.INFO)
 
@@ -51,7 +53,7 @@ async def send_welcome(message: types.Message):
         'top_p' : 0.2,
         'frequency_penalty' : 0.2,
         'presence_penalty' : 0.2,
-        'messages' = []
+        'messages' = [{"role": "system", "content": "You are a helpful assistant."}]
     })
 
 # Обработка команды /context
@@ -59,8 +61,8 @@ async def send_welcome(message: types.Message):
 async def show_context(message: types.Message):
     user_id = message.from_user.id
     user_data = await get_user_data(user_id)
-    if user_data['prompt']:
-        await message.answer(user_data['prompt'])
+    if user_data['messages']:
+        await message.answer(user_data['messages'])
     else:
         await message.answer( "Контекст пуст.")
 
@@ -70,32 +72,10 @@ async def show_context(message: types.Message):
 async def clear_context(message: types.Message):
     user_id = message.from_user.id
     user_data = await get_user_data(user_id)
-    user_data['prompt'] = ""
+    user_data['messages'] = []
     await message.answer("Контекст очищен.")
     await save_user_data(user_id, user_data)
 
-@dp.message_handler(commands=['base'])
-async def set_base(message: types.Message):
-    user_id = message.from_user.id
-    user_data = await get_user_data(user_id)
-    user_data['base'] = message.get_args()
-    await save_user_data(user_id, user_data)
-    await message.answer(f"Базовый контекст изменен.")
-
-@dp.message_handler(commands=['codex'])
-async def codex(message: types.Message):
-    user_id = message.from_user.id
-    user_data = await get_user_data(user_id)
-    try:
-        response = openai.Completion.create(
-        engine="code-davinci-002",
-        prompt=message.get_args(),
-        max_tokens=6000
-        )
-        answer = response.choices[0].text.strip()
-        await message.answer(answer)
-    except openai.error.RateLimitError as e:
-        await message.answer('Превышен лимит запросов:' + str(e))
 
 # Обработка команды /t
 @dp.message_handler(commands=['t'])
@@ -135,9 +115,6 @@ async def set_max_tokens(message: types.Message):
 
 def num_tokens(messages):
   """Returns the number of tokens used by a list of messages."""
-  user_id = message.from_user.id
-  user_data = await get_user_data(user_id)
-  encoding = tiktoken.get_encoding("cl100k_base")
   num_tokens = 0
   for message in messages:
     num_tokens += 4  # every message follows <im_start>{role/name}\n{content}<im_end>\n
@@ -149,7 +126,7 @@ def num_tokens(messages):
    return num_tokens
 
 # Добавить новое сообщение к списку, удаляя лишние при превышении длины.
-def update_messages(message):
+def update_messages(messages, message):
   pass
   
 
@@ -160,19 +137,18 @@ async def any_message(message: types.Message):
     # Получение текста сообщения от пользователя
     user_id = message.from_user.id
     user_data = await get_user_data(user_id)
-    user_input = message.text
-
-    # получить список токенов из ввода
-    input_tokens = tokenizer.tokenize(user_input)
-    prompt_tokens = tokenizer.tokenize(user_data['prompt'])
-    base_tokens = tokenizer.tokenize(user_data['base'])
+    
+    user_message = {"role": "user", "content":message.text}
+    
+    user_data['messages'] = update_messages(user_data['messages'], user_message)
+    
     # вычислить общее количество токенов
-    total_tokens = len(input_tokens) + len(prompt_tokens) + len(base_tokens)
+    total_tokens = num_tokens(user_data['messages'])
 
     # вычислить количество лишних токенов
     excess_tokens = max(0, total_tokens - (4097 - user_data['max_tokens']))
 
-    # добавить ввод к истории, удаляя необходимое количество токенов
+    # Удалить лишнее
     if excess_tokens > 0:
         prompt_tokens = prompt_tokens[excess_tokens:]
         user_data['prompt'] = tokenizer.convert_tokens_to_string(prompt_tokens) + " " + user_input
