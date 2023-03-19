@@ -109,12 +109,12 @@ async def set_max_tokens(message: types.Message):
     
 @dp.message_handler(commands=['help'])
 async def help(message: types.Message):
-    await message.answer("Доступны следующие команды:\n
-    /t 0-2.0 - изменить параметр temperature;\n
-    /max 1-4097 - изменить параметр max_tokens;\n
-    /system текст - изменить системное сообщение;\n
-    /clear - очистить историю чата;\n
-    /context - показать историю чата;\n
+    await message.answer("Доступны следующие команды:\n\
+    /t 0-2.0 - изменить параметр temperature;\n\
+    /max 1-4097 - изменить параметр max_tokens;\n\
+    /system текст - изменить системное сообщение;\n\
+    /clear - очистить историю чата;\n\
+    /context - показать историю чата;\n\
     /start - установить значения параметров по-умолчанию."
     )
     
