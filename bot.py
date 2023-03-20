@@ -178,27 +178,31 @@ async def any_message(message: types.Message):
     
     user_data = update_messages(user_data, user_message_dict)
 
+    # Запись времени вызова функции any_message
+    start_time = datetime.now()
+
     # Генерация ответа на основе текста сообщения
     try:
         response = openai.ChatCompletion.create(
           model="gpt-3.5-turbo",
           messages=user_data['messages'],
           temperature = user_data['temperature'],
-          max_tokens = user_data['max_tokens']
+          max_tokens = user_data['max_tokens'
           )
 
         # Получение ответа из сгенерированного текста
-        answer = '{content} \nFinish reason = {finish_reason};\nUsage = {usage};\nNum_tokens = {num_tokens}'.format(
+        answer = '{content} \nFinish reason = {finish_reason};\nUsage = {usage};\nTime taken = {time_taken}'.format(
             content=response['choices'][0]['message']['content'], 
             finish_reason=response['choices'][0]['finish_reason'], 
             usage = response['usage'], 
-            num_tokens = num_tokens(user_data['messages']))
+            time_taken = (datetime.now() - start_time).seconds) # Вычисление времени выполнения функции в секундах
         print(answer)
         try:
             await message.answer(answer)
         except Exception as e:
-            await message.answer(str(e))
-    
+            await message.answer(str(e))         
+            
+            
         user_data['messages'].append(response['choices'][0]['message'])
         
         await save_user_data(user_id,user_data)
