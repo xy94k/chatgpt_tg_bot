@@ -17,11 +17,19 @@ async def get_user_data(user_id):
         with open(f"user_data/{user_id}.json") as f:
             return json.load(f)
     except FileNotFoundError:
-        save_user_data(user_id, DEFAULT_USER_DATA)
+        if save_user_data(user_id, DEFAULT_USER_DATA):
+            return get_user_data(user_id)
+        else:
+            return DEFAULT_USER_DATA
 
 async def save_user_data(user_id, user_data):
-    with open(f"user_data/{user_id}.json", "w") as f:
-        json.dump(user_data, f)
+    try:
+        with open(f"user_data/{user_id}.json", "w") as f:
+            json.dump(user_data, f)
+        return True
+    except Exception as e:
+        print(f"Error saving user data: {e}")
+        return False
 
 
 DEFAULT_USER_DATA = {
@@ -31,7 +39,7 @@ DEFAULT_USER_DATA = {
         'top_p' : 0.2,
         'frequency_penalty' : 0.2,
         'presence_penalty' : 0.2,
-        'messages' : [{"role": "system", "content": "You are a helpful assistant. Always use <code> html tag for markup program code."}]
+        'messages' : [{"role": "system", "content": "You are a helpful assistant. Always use <code> html tag to format program code! Do not use it in other text! Solve tasks step by step."}]
     }
 
 
