@@ -192,7 +192,7 @@ async def any_message(message: types.Message):
           )
 
         # Получение ответа из сгенерированного текста
-        answer = '{content} \nFinish reason = {finish_reason};\nUsage = {usage};\nTime taken = {time_taken}'.format(
+        answer = '{content} \nFinish reason = {finish_reason};\nUsage = {usage};\nResponse time = {time_taken} s.'.format(
             content=response['choices'][0]['message']['content'], 
             finish_reason=response['choices'][0]['finish_reason'], 
             usage = response['usage'], 
