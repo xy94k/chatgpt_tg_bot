@@ -5,7 +5,7 @@ from aiogram import Bot, Dispatcher, executor, types
 load_dotenv()
 
 openai.api_key = os.getenv('OPENAI_API_KEY')
-bot = Bot(token=str(os.getenv('TELEGRAM_TOKEN')), parse_mode=types.ParseMode.HTML)
+bot = Bot(token=str(os.getenv('TELEGRAM_TOKEN')), parse_mode="MarkdownV2")
 dp = Dispatcher(bot)
 encoding = tiktoken.get_encoding("cl100k_base")
 
