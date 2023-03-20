@@ -187,7 +187,7 @@ async def any_message(message: types.Message):
           model="gpt-3.5-turbo",
           messages=user_data['messages'],
           temperature = user_data['temperature'],
-          max_tokens = user_data['max_tokens'
+          max_tokens = user_data['max_tokens']
           )
 
         # Получение ответа из сгенерированного текста
