@@ -1,4 +1,4 @@
-import openai, re, logging, os, json, tiktoken
+import openai, re, logging, os, json, tiktoken, aiofiles
 from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, executor, types
 
@@ -14,22 +14,22 @@ logging.basicConfig(level=logging.INFO)
 
 async def get_user_data(user_id):
     try:
-        with open(f"user_data/{user_id}.json") as f:
-            return json.load(f)
+        async with aiofiles.open(f"user_data/{user_id}.json") as f:
+            return json.loads(await f.read())
     except Exception as e:
         print(str(e))
-        if save_user_data(user_id, DEFAULT_USER_DATA):
-            return get_user_data(user_id)
+        if await save_user_data(user_id, DEFAULT_USER_DATA):
+            return await get_user_data(user_id)
         else:
             return DEFAULT_USER_DATA
 
 async def save_user_data(user_id, user_data):
     try:
-        with open(f"user_data/{user_id}.json", "w") as f:
-            json.dump(user_data, f)
+        async with aiofiles.open(f"user_data/{user_id}.json", "w") as f:
+            await f.write(json.dumps(user_data))
         return True
     except Exception as e:
-        print(f"Error saving user data: {e}")
+        print(str(e))
         return False
 
 
