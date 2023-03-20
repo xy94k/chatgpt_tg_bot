@@ -16,7 +16,8 @@ async def get_user_data(user_id):
     try:
         with open(f"user_data/{user_id}.json") as f:
             return json.load(f)
-    except FileNotFoundError:
+    except Exception as e:
+        print(str(e))
         if save_user_data(user_id, DEFAULT_USER_DATA):
             return get_user_data(user_id)
         else:
