@@ -31,7 +31,7 @@ DEFAULT_USER_DATA = {
         'top_p' : 0.2,
         'frequency_penalty' : 0.2,
         'presence_penalty' : 0.2,
-        'messages' : [{"role": "system", "content": "You are a helpful assistant. Use <code> tag for markup code blocks."}]
+        'messages' : [{"role": "system", "content": "You are a helpful assistant. Always use <code> html tag for markup program code."}]
     }
 
 
