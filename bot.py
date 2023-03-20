@@ -1,11 +1,12 @@
-import openai, re, logging, os, json, tiktoken
+import openai, re, logging, os, json, tiktoken, aiofiles
 from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, executor, types
+from datetime import datetime
 
 load_dotenv()
 
 openai.api_key = os.getenv('OPENAI_API_KEY')
-bot = Bot(token=str(os.getenv('TELEGRAM_TOKEN')))
+bot = Bot(token=str(os.getenv('TELEGRAM_TOKEN')), parse_mode=types.ParseMode.HTML)
 dp = Dispatcher(bot)
 encoding = tiktoken.get_encoding("cl100k_base")
 
@@ -14,14 +15,23 @@ logging.basicConfig(level=logging.INFO)
 
 async def get_user_data(user_id):
     try:
-        with open(f"user_data/{user_id}.json") as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return None
+        async with aiofiles.open(f"user_data/{user_id}.json") as f:
+            return json.loads(await f.read())
+    except Exception as e:
+        print(str(e))
+        if await save_user_data(user_id, DEFAULT_USER_DATA):
+            return await get_user_data(user_id)
+        else:
+            return DEFAULT_USER_DATA
 
 async def save_user_data(user_id, user_data):
-    with open(f"user_data/{user_id}.json", "w") as f:
-        json.dump(user_data, f)
+    try:
+        async with aiofiles.open(f"user_data/{user_id}.json", "w") as f:
+            await f.write(json.dumps(user_data))
+        return True
+    except Exception as e:
+        print(str(e))
+        return False
 
 
 DEFAULT_USER_DATA = {
@@ -31,7 +41,7 @@ DEFAULT_USER_DATA = {
         'top_p' : 0.2,
         'frequency_penalty' : 0.2,
         'presence_penalty' : 0.2,
-        'messages' : [{"role": "system", "content": "You are a helpful assistant."}]
+        'messages' : [{"role": "system", "content": "You are a helpful assistant. Always use <code> html tag to format program code! Do not use it in other text! Solve tasks step by step."}]
     }
 
 
@@ -164,10 +174,13 @@ async def any_message(message: types.Message):
     # Получение текста сообщения от пользователя
     user_id = message.from_user.id
     user_data = await get_user_data(user_id)
-    
+    print(message.text)
     user_message_dict = {"role": "user", "content":message.text}
     
     user_data = update_messages(user_data, user_message_dict)
+
+    # Запись времени вызова функции any_message
+    start_time = datetime.now()
 
     # Генерация ответа на основе текста сообщения
     try:
@@ -179,17 +192,18 @@ async def any_message(message: types.Message):
           )
 
         # Получение ответа из сгенерированного текста
-        answer = '{content} \nFinish reason = {finish_reason};\nUsage = {usage};\nNum_tokens = {num_tokens}'.format(
+        answer = '{content} \nFinish reason = {finish_reason};\nUsage = {usage};\nResponse time = {time_taken} s.'.format(
             content=response['choices'][0]['message']['content'], 
             finish_reason=response['choices'][0]['finish_reason'], 
             usage = response['usage'], 
-            num_tokens = num_tokens(user_data['messages']))
-        
+            time_taken = (datetime.now() - start_time).seconds) # Вычисление времени выполнения функции в секундах
+        print(answer)
         try:
             await message.answer(answer)
         except Exception as e:
-            await message.answer(str(e))
-    
+            await message.answer(str(e))         
+            
+            
         user_data['messages'].append(response['choices'][0]['message'])
         
         await save_user_data(user_id,user_data)
