@@ -5,7 +5,7 @@ from aiogram import Bot, Dispatcher, executor, types
 load_dotenv()
 
 openai.api_key = os.getenv('OPENAI_API_KEY')
-bot = Bot(token=str(os.getenv('TELEGRAM_TOKEN')), parse_mode="MarkdownV2")
+bot = Bot(token=str(os.getenv('TELEGRAM_TOKEN')), parse_mode=types.ParseMode.HTML)
 dp = Dispatcher(bot)
 encoding = tiktoken.get_encoding("cl100k_base")
 
@@ -184,7 +184,7 @@ async def any_message(message: types.Message):
             finish_reason=response['choices'][0]['finish_reason'], 
             usage = response['usage'], 
             num_tokens = num_tokens(user_data['messages']))
-        
+        print(answer)
         try:
             await message.answer(answer)
         except Exception as e:
